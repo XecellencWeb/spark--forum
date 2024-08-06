@@ -1,0 +1,41 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base{
+    body{
+        font-family: "Roboto", sans-serif;
+        @apply bg-slate-100 text-slate-700;
+    }
+}
+
+@layer utilities{
+    .page-frame{
+        @apply rounded-[2rem] max-w-5xl w-full max-h-[35rem] overflow-x-clip overflow-y-auto mb-20 border-gray-600 mx-auto -mt-20 bg-white;
+        box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+        translate: 200%;
+        opacity: 0;
+        animation: slide-in 2s forwards;
+    }
+
+    .page-frame::-webkit-scrollbar{
+        width: 8px;
+        height: 8px;
+    }
+
+    .page-frame::-webkit-scrollbar-thumb{
+        @apply bg-gray-400 rounded-md;
+    }
+
+
+    @keyframes slide-in {
+        to{
+            opacity: 1;
+            translate: 0 0;
+        }
+    }
+} 
+
