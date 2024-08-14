@@ -6,6 +6,9 @@ import PostPage from "./page/PostPage";
 import UserPage from "./page/UserPage";
 import Following from "./page/Following";
 import Followers from "./page/Followers";
+import ProfilePage from "./page/ProfilePage";
+import NotificationPage from "./page/NotificationPage";
+import FavoritePage from "./page/FavoritePage";
 
 const App = () => {
   return <BrowserRouter>
@@ -16,6 +19,9 @@ const App = () => {
         <Route path="/users" element={<PageFrame heading="Users" Page={UserPage}/>}/>
         <Route path="/following" element={<PageFrame heading="Following" Page={Following}/>}/>
         <Route path="/followers" element={<PageFrame heading="Followers" Page={Followers}/>}/>
+        <Route path="/profile" element={<PageFrame heading="User Profile" Page={ProfilePage}/>}/>
+        <Route path="/notifications" element={<PageFrame heading="Notifications" Page={NotificationPage}/>}/>
+        <Route path="/favourite" element={<PageFrame heading="Favourite Posts" Page={FavoritePage}/>}/>
       </Routes>
   </BrowserRouter>
 };

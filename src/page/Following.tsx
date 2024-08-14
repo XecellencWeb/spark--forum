@@ -1,10 +1,11 @@
+import { user_list, UserTemplate, UserType } from "./UserPage"
 
 
 const Following = () => {
   return (
-    <div>
-      Following Page
-    </div>
+   <div className="max-w-3xl my-4 mx-auto flex flex-col gap-3">
+    {user_list.filter(a=>a.following)?.map((user:UserType)=><UserTemplate user={user}/>)}
+  </div>
   )
 }
 

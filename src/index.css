@@ -10,23 +10,31 @@
         font-family: "Roboto", sans-serif;
         @apply bg-slate-100 text-slate-700;
     }
+
+    summary{
+        list-style: none;
+    }
 }
 
 @layer utilities{
     .page-frame{
-        @apply rounded-[2rem] max-w-5xl w-full max-h-[35rem] overflow-x-clip overflow-y-auto mb-20 border-gray-600 mx-auto -mt-20 bg-white;
+        @apply rounded-[2rem] max-w-5xl w-full overflow-x-clip mb-20 border-gray-600 mx-auto -mt-[50vh] bg-white;
         box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
         translate: 200%;
         opacity: 0;
         animation: slide-in 2s forwards;
     }
 
-    .page-frame::-webkit-scrollbar{
+    .page-content{
+        @apply overflow-y-auto min-h-[60vh] max-h-[50rem];
+    }
+
+    .page-content::-webkit-scrollbar{
         width: 8px;
         height: 8px;
     }
 
-    .page-frame::-webkit-scrollbar-thumb{
+    .page-content::-webkit-scrollbar-thumb{
         @apply bg-gray-400 rounded-md;
     }
 

@@ -9,7 +9,7 @@ const NavBar = () => {
       <div className="bg-blue-950 p-4 border-b border-gray-700">
         <div className="container mx-auto flex gap-3 items-center">
           <a href="/" className="text-3xl font-bold text-white">
-            TechShareIt
+            SmartChain
           </a>
 
           <div className="flex mx-auto gap-3 text-slate-200 font-semibold max-md:hidden">
@@ -21,13 +21,13 @@ const NavBar = () => {
           </div>
 
           <div className="flex gap-3 ml-auto text-slate-200 items-center">
-            <TiHeartFullOutline />
-            <FaBell />
-            <FaUserCircle size={30} />
+            <Link to='/favourite'><TiHeartFullOutline /></Link>
+            <Link to='/notifications'><FaBell /></Link>
+            <Link to='/profile'><FaUserCircle size={30} /></Link>
           </div>
         </div>
       </div>
-      <div className="bg-blue-950 h-40" />
+      <div className="bg-blue-950 h-[60vh]" />
     </>
   );
 };
