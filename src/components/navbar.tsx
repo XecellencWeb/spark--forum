@@ -54,7 +54,7 @@ const NavBar = () => {
           </div>
         </div>
       </div>
-      <div className="bg-blue-950 h-[60vh]" />
+      <div className="bg-blue-950 h-[60vh] bg-pattern" />
     </>
   );
 };

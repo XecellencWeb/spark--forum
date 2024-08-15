@@ -18,6 +18,11 @@
 }
 
 @layer utilities{
+   .bg-pattern{
+      background-image: url('/imgs/speech-bg.svg')
+
+   }
+
     .icon-links  a{
         @apply flex items-center gap-1;
     }
