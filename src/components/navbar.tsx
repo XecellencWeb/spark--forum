@@ -8,7 +8,7 @@ import { TiHeartFullOutline } from "react-icons/ti";
 import { Link } from "react-router-dom";
 
 const NavBar = () => {
- const [navbarClosed, setNavbarClosed] = useState(true)
+ const [navbarClosed, setNavbarClosed] = useState(false)
 
   return (
     <>

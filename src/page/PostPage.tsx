@@ -16,6 +16,8 @@ export const thread = [
     timestamp: "2024-08-05T10:00:00Z",
     content:
       "Hey everyone, just started a new project and wanted to share some updates!",
+    createdBy:'current',
+    markedFavourite:['current'],
     comments: [
       {
         id: 1,
@@ -39,6 +41,8 @@ export const thread = [
     timestamp: "2024-08-05T10:30:00Z",
     content:
       "I think it’s going to be a fantastic tool. Looking forward to seeing more updates!",
+     createdBy:'',
+     markedFavourite:[],
     comments: [], // No comments for this post
   },
   {
@@ -47,6 +51,8 @@ export const thread = [
     timestamp: "2024-08-05T10:45:00Z",
     content:
       "Sure! It’s a web application designed to help people track their fitness goals. I’ve been working on the UI and backend integration.",
+      markedFavourite:[],
+      createdBy:'current',
     comments: [
       {
         id: 3,
@@ -63,6 +69,8 @@ export const thread = [
     timestamp: "2024-08-05T11:00:00Z",
     content:
       "Yes, I have a prototype ready. I’ll share the link with everyone once it’s polished a bit more.",
+      createdBy:'',
+      markedFavourite:['current'],
     comments: [], // No comments for this post
   },
   {
@@ -70,6 +78,8 @@ export const thread = [
     username: "Dave",
     timestamp: "2024-08-05T11:15:00Z",
     content: "Sounds exciting! Can’t wait to check it out.",
+    createdBy:'',
+    markedFavourite:['current'],
     comments: [], // No comments for this post
   },
 ];
@@ -86,6 +96,8 @@ export type PostType = {
   username: string,
   timestamp: string,
   content: string,
+  createdBy: string,
+  markedFavourite: string[],
   comments: PostComment[]
 }
 
