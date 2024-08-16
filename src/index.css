@@ -7,9 +7,10 @@
 
 @layer base{
     body{
+        background-image: url('/imgs/speech-bg.png');
         overflow-x: clip;
         font-family: "Roboto", sans-serif;
-        @apply bg-slate-100 text-slate-700;
+        @apply bg-slate-200 text-slate-700;
     }
 
     summary{

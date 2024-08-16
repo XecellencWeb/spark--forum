@@ -43,15 +43,15 @@ export const UserTemplate = ({user}:{user:UserType})=>{
 
   const [following,setFollowing] =  useState(user.following)
 
-return <div className="flex gap-2 items-center border-2 rounded-full p-4 border-blue-200">
+return <div className="flex flex-wrap gap-2 items-center border-2 rounded-full p-4 border-blue-200">
     <FaUserCircle size={50} />
-    <div className="flex flex-col gap-0 basis-[30rem]">
+    <div className="flex flex-col gap-0 basis-[10rem] shrink">
               <h3 className="font-semibold">{user.name}</h3>
               <span className="text-gray-400">
                 {user.role}
               </span>
         </div>
-        <div className="flex gap-5">
+        <div className="flex min-w-40 ml-auto gap-5">
           {following?<button onClick={()=>setFollowing(false)}className="text-blue-600 font-bold">Unfollow</button>:<button onClick={()=>setFollowing(true)} className="text-blue-600 font-bold">Follow</button>}
           <div className="flex gap-1 items-center text-gray-500 font-semibold">
           <FaUserCircle size={20}/>

@@ -23,6 +23,7 @@ const App = () => {
         <Route path="/notifications" element={<PageFrame heading="Notifications" Page={NotificationPage}/>}/>
         <Route path="/favourite" element={<PageFrame heading="Favourite Posts" Page={FavoritePage}/>}/>
       </Routes>
+      <div className="text-center mb-8">&copy; Smart Chain. Powered by Spark Media.</div>
   </BrowserRouter>
 };
 
