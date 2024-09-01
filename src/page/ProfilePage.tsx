@@ -3,6 +3,17 @@ import { FaUserCircle } from "react-icons/fa"
 import Select from 'react-select'
 import { PostTemplate, thread } from "./PostPage"
 
+export const role_data = [
+  'Logistics Analyst or Manager',
+  'Supply Chain Analyst or Manager',
+  'Fleet Manager',
+  'Warehouse Operations Manager',
+  'Storage and Distribution Manager',
+  'Global Logistics Manager',
+  'Procurement Manager',
+  'Facilities Manager'
+]
+
 const ProfilePage = () => {
   
     const [editing, setEditing] = useState(false)
@@ -22,16 +33,7 @@ const ProfilePage = () => {
         <div className="mb-4">
           <h4 className="font-bold ml-4 mb-1">Logistics Career Role</h4>
           <Select isMulti options={
-            [
-              'Logistics Analyst or Manager',
-              'Supply Chain Analyst or Manager',
-              'Fleet Manager',
-              'Warehouse Operations Manager',
-              'Storage and Distribution Manager',
-              'Global Logistics Manager',
-              'Procurement Manager',
-              'Facilities Manager'
-            ].map(a=>({value:a,label:a}))
+            role_data.map(a=>({value:a,label:a}))
             } />
         </div>
         <button onClick={()=>setEditing(false)} className="bg-blue-500 hover:bg-blue-300 font-bold text-white w-fit block rounded-full px-3 py-2 ml-auto">Submit</button>

@@ -28,7 +28,7 @@
         @apply flex items-center gap-1;
     }
     .page-frame{
-        @apply rounded-[2rem] max-w-5xl w-full overflow-x-clip mb-20 border-gray-600 mx-auto -mt-[50vh] bg-white;
+        @apply rounded-[2rem] container w-full overflow-x-clip mb-20 border-gray-600 mx-auto -mt-[50vh] bg-white;
         box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
         translate: 200%;
         opacity: 0;
@@ -45,7 +45,7 @@
     }
 
     .page-content::-webkit-scrollbar-thumb{
-        @apply bg-gray-400 rounded-md;
+        @apply bg-gray-200 rounded-md;
     }
 
 
