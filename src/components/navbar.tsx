@@ -9,7 +9,7 @@ import { TiHeartFullOutline } from "react-icons/ti";
 import { Link, useSearchParams } from "react-router-dom";
 import Popup from "./Popup";
 import { useAuth, UserContextType } from "../context/authContext";
-import Select from "react-select";
+//import Select from "react-select";
 import SignUp from "./SignUp";
 import LogIn from "./LogIn";
 
