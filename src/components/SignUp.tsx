@@ -47,7 +47,7 @@ const SignUp = () => {
           <input onChange={(e)=>setSignupData(prev=>({...prev,password:e.target.value}))} type="password" className="border-[1px] rounded-lg border-gray-700 w-full p-2 focus:border-blue-950 focus:border-2 outline-none" />
         </label>
         <label htmlFor="password">
-          <h3 className="font-semibold">Logistics Role</h3>
+          <h3 className="font-semibold">Career Role</h3>
           <Select onChange={(option:{value:string,label:string} | null,_)=>setSignupData(prev=>({...prev,role:option?.value as string}))} options={role_data.map(a=>({label:a,value:a}))}/>
         </label>
         <button className="bg-blue-950 w-full py-2 rounded-xl text-white font-bold hover:bg-blue-700">Sign Up</button>
