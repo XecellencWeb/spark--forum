@@ -39,6 +39,13 @@ export type PostType = {
   // comments:
 };
 
+export type PostCreate = {
+  post: string;
+  username: string;
+  email: string;
+  tags: string[];
+};
+
 export type UserType = {
   email: string;
   password: string;
@@ -51,11 +58,29 @@ export type LoginType = {
 };
 
 export type UserContextType = {
+  //users functions
   currentUser: UserType | undefined;
   loginUser: (user: LoginType) => void;
   signUpUser: (user: UserType) => void;
   allUsers: UserType[];
   getAllUsers: () => void;
+  followUser: (email: string) => void;
+  unFollowUser: (email: string) => void;
+  acceptFollowRequest: (email: string) => void;
+  declinePendingRequest: (email: string) => void;
+  cancelPendingRequest: (email: string) => void;
+
+  //post functions
+  createPost: (post: PostCreate) => void;
+  commentOnPost: (postref: any, comment: any) => void;
+  likePost: (postref: any) => void;
+  dislikePost: (postref: any) => void;
+  likeComment: (postref: any, commentId: number) => void;
+  dislikeComment: (postref: any, commentId: number) => void;
+  markPostFavourite: (postId: number) => void;
+  posts: PostType[];
+  followers: UserType[];
+  notices: any[];
 };
 
 //like query
@@ -123,14 +148,24 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   //post funcs
 
   //create post
-  const createPost = async (postCreate: {
-    post: string;
-    username: string;
-    email: string;
-    tags: string[];
-  }) => {
+  const createPost = async (postCreate: PostCreate) => {
     try {
-      await addDoc(collection(db, "posts"), postCreate);
+      const posts = (await getDocs(collection(db, "posts"))).docs.map((a) =>
+        a.data()
+      );
+      let id;
+      if (posts.length) {
+        const sorted = posts.sort((a, b) => b.id - a.id);
+        id = sorted[0].id + 1;
+      } else {
+        id = 1;
+      }
+
+      await addDoc(collection(db, "posts"), {
+        id,
+        ...postCreate,
+        createdAt: Date.now(),
+      });
 
       createNewNotice({
         message: `${auth.currentUser?.displayName} just created a new post`,
@@ -140,6 +175,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
       console.log(error);
     }
   };
+
   //get all post
   const getAllPosts = async () => {
     try {
@@ -263,7 +299,6 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  
   //dislike a comment
   const dislikeComment = async (postRef: any, commentId: any) => {
     try {
@@ -291,6 +326,34 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   };
 
   //mark post as favourite
+  const markPostFavourite = async (postId: number) => {
+    try {
+      const user = (
+        await getDocs(
+          query(
+            collection(db, "users"),
+            where("email", "==", auth.currentUser?.email)
+          )
+        )
+      ).docs;
+
+      const favouritePosts = user[0].data().favouritePosts as
+        | number[]
+        | undefined;
+
+      let newFavouritePosts;
+
+      if (favouritePosts)
+        if (favouritePosts?.includes(postId))
+          newFavouritePosts = favouritePosts.filter((a) => a !== postId);
+        else newFavouritePosts = [...favouritePosts, postId];
+      else newFavouritePosts = [postId];
+
+      await updateDoc(user[0].ref, { favouritePosts: newFavouritePosts });
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   //notifications func
   const createNewNotice = async ({
@@ -303,11 +366,19 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     noticeFor?: string[];
   }) => {
     try {
+      const user = (
+        await getDocs(
+          query(
+            collection(db, "users"),
+            where("email", "==", auth.currentUser?.email)
+          )
+        )
+      ).docs;
       await addDoc(collection(db, "notifications"), {
         seen: [auth.currentUser?.email],
         type,
         message,
-        noticeFor,
+        noticeFor: noticeFor || user[0].data().followers || [],
       });
     } catch (error) {
       console.log(error);
@@ -316,6 +387,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
 
   //get notification
   const getNotice = async () => {
+    if (!auth.currentUser) return;
     clearTimeout(noticeRef.current);
     try {
       const ss = await getDocs(collection(db, "notifications"));
@@ -323,10 +395,9 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
       ss.forEach(async (s) => {
         const notice = s.data();
         if (notice.seen?.includes(auth.currentUser?.email as string)) return;
-        if (notice.noticeFor) {
-          if (!notice.noticeFor.includes(auth.currentUser?.email as string)) {
-            return;
-          }
+
+        if (!notice.noticeFor.includes(auth.currentUser?.email as string)) {
+          return;
         }
 
         await updateDoc(s.ref, {
@@ -336,13 +407,16 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
         delete notice.seen;
         delete notice.noticeFor;
 
-        toast.success("Hi, incoming notification");
         setNotices((prev: any) => [...prev, notice]);
 
         if (notice.type == "USER") {
-          updateCurrentUser(auth.currentUser?.email as string);
-          getAllUsers();
+          await updateCurrentUser(auth.currentUser?.email as string);
+          await getAllUsers();
+        } else {
+          await getAllPosts();
         }
+
+        toast.success("Hi, incoming notification");
 
         noticeRef.current = setTimeout(getNotice, 200);
       });
@@ -574,6 +648,8 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     getAllUsers();
+    getAllPosts();
+    getNotice();
   }, []);
 
   const contextProps: UserContextType = {
@@ -582,6 +658,21 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     signUpUser,
     allUsers,
     getAllUsers,
+    acceptFollowRequest,
+    cancelPendingRequest,
+    commentOnPost,
+    createPost,
+    declinePendingRequest,
+    dislikeComment,
+    dislikePost,
+    followUser,
+    likeComment,
+    likePost,
+    markPostFavourite,
+    unFollowUser,
+    followers,
+    notices,
+    posts,
   };
 
   return (
