@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
 import { Link } from "react-router-dom";
-import { useAuth, UserContextType } from "../context/authContext";
+import { useAuth, UserContextType, UserType } from "../context/authContext";
+import { auth } from "../firebase/config";
 
 export const user_list = [
   {
@@ -33,39 +34,40 @@ export const user_list = [
   },
 ];
 
-export type UserType = {
-  name: string;
-  role: string;
-  following: boolean;
-  followed?: string[];
-};
+// export type UserType = {
+//   name: string;
+//   role: string;
+//   following: boolean;
+//   followed?: string[];
+// };
 
 export const UserTemplate = ({ user }: { user: UserType }) => {
-  const [following, setFollowing] = useState(user.following);
+  const { followUser }: Partial<UserContextType> = useAuth();
+  const [following, setFollowing] = useState(
+    !!auth.currentUser &&
+      !!user.followers?.find((a) => a.email == auth.currentUser?.email)
+  );
 
   return (
     <div className="flex flex-wrap gap-2 items-center border-2 rounded-full p-4 border-blue-200">
       <FaUserCircle size={50} />
       <div className="flex flex-col gap-0 basis-[10rem] shrink">
-        <h3 className="font-semibold">{user.name}</h3>
+        <h3 className="font-semibold">{user.username}</h3>
         <span className="text-gray-400">{user.role}</span>
       </div>
       <div className="flex min-w-40 ml-auto gap-5">
-        {following ? (
-          <button
-            onClick={() => setFollowing(false)}
-            className="text-blue-600 font-bold"
-          >
-            Unfollow
-          </button>
-        ) : (
-          <button
-            onClick={() => setFollowing(true)}
-            className="text-blue-600 font-bold"
-          >
-            Follow
-          </button>
-        )}
+        <button
+          onClick={async () => {
+            setFollowing((prev) => !prev);
+            setFollowing(
+              (await followUser?.(user.email)) as unknown as boolean
+            );
+          }}
+          className="text-blue-600 font-bold"
+        >
+          {following ? "unfollow" : "follow"}
+        </button>
+
         <div className="flex gap-1 items-center text-gray-500 font-semibold">
           <FaUserCircle size={20} />
           <Link to="/profile">Profile</Link>
@@ -76,7 +78,7 @@ export const UserTemplate = ({ user }: { user: UserType }) => {
 };
 
 const UserPage = () => {
-  const { getAllUsers }: Partial<UserContextType> = useAuth();
+  const { allUsers, getAllUsers }: Partial<UserContextType> = useAuth();
 
   useEffect(() => {
     getAllUsers && getAllUsers();
@@ -84,8 +86,8 @@ const UserPage = () => {
 
   return (
     <div className="max-w-3xl my-4 mx-auto flex flex-col gap-3">
-      {user_list?.map((user: UserType) => (
-        <UserTemplate user={user} />
+      {allUsers?.map((user: UserType, i: number) => (
+        <UserTemplate key={i} user={user} />
       ))}
     </div>
   );

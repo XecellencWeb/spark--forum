@@ -19,7 +19,7 @@ const PageFrame = ({ heading, Page }: { heading: string; Page: React.FC }) => {
     <div className="flex flex-wrap gap-12  p-8 page-frame">
       <div className="basis-[50rem] grow">
         <div className="flex justify-between flex-wrap border-b-2 border-blue-100 pb-4 px-4">
-      <h2 className="font-bold lg:text-3xl text-2xl  flex ">
+      <h2 className="font-bold lg:text-3xl text-2xl max-w-2xl w-full mx-auto flex">
         {heading}
       </h2>
       {heading.toLowerCase() === 'users' && <Searcher/>}

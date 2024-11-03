@@ -11,6 +11,7 @@ import NotificationPage from "./page/NotificationPage";
 import FavoritePage from "./page/FavoritePage";
 import { Toaster } from "react-hot-toast";
 import AuthContext from "./context/authContext";
+import SinglePagePostPage from "./page/SinglePagePostPage";
 
 const App = () => {
   return (
@@ -26,6 +27,10 @@ const App = () => {
           <Route
             path="/post"
             element={<PageFrame heading="Post" Page={PostPage} />}
+          />
+          <Route
+            path="/post/:id"
+            element={<PageFrame heading="Post" Page={SinglePagePostPage} />}
           />
           <Route
             path="/users"

@@ -22,7 +22,6 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import toast from "react-hot-toast";
-import Following from "../page/Following";
 
 const UserContext = createContext({});
 
@@ -33,23 +32,46 @@ export type NoticeType = {
   noticeFor?: string[];
 };
 
-export type PostType = {
-  name: string;
-  message: string;
-  // comments:
+type PostComment = {
+  // id:number,
+  username: string;
+  createdAt?: string;
+  content: string;
 };
 
-export type PostCreate = {
-  post: string;
+export type PostType = {
+  id?: number;
+  ref?: any;
   username: string;
-  email: string;
-  tags: string[];
+  createdAt?: string;
+  content: string;
+  createdBy: string;
+  tagNames?: string[];
+  following?: boolean;
+  liked?: boolean;
+  likedBy?: string[];
+  dislikedBy?: string[];
+  unliked?: boolean;
+  markedFavourite?: boolean;
+  comments?: PostComment[];
 };
+
+// export type PostCreate = {
+//   post: string;
+//   username: string;
+//   email: string;
+//   tags: string[];
+// };
+
+export type followRequest = { status: "ACCEPTED" | "PENDING"; email: string };
 
 export type UserType = {
+  username: string;
+  role: string;
   email: string;
   password: string;
-  followers: { status: "ACCEPTED" | "PENDING"; email: string }[];
+  followers?: followRequest[];
+  favouritePosts?: number[];
 };
 
 export type LoginType = {
@@ -64,6 +86,7 @@ export type UserContextType = {
   signUpUser: (user: UserType) => void;
   allUsers: UserType[];
   getAllUsers: () => void;
+  getUser: (email: string) => Promise<UserType>;
   followUser: (email: string) => void;
   unFollowUser: (email: string) => void;
   acceptFollowRequest: (email: string) => void;
@@ -71,8 +94,9 @@ export type UserContextType = {
   cancelPendingRequest: (email: string) => void;
 
   //post functions
-  createPost: (post: PostCreate) => void;
-  commentOnPost: (postref: any, comment: any) => void;
+  createPost: (post: PostType) => void;
+  getAPost: (postId: number) => Promise<PostType>;
+  commentOnPost: (postref: any, comment: PostComment) => void;
   likePost: (postref: any) => void;
   dislikePost: (postref: any) => void;
   likeComment: (postref: any, commentId: number) => void;
@@ -84,22 +108,20 @@ export type UserContextType = {
 };
 
 //like query
-const like = (post: any) => {
+const like = (post: PostType) => {
   let likedBy;
   let dislikedBy;
 
-  if (post.dislikedBy) {
-    if (post.dislikedBy.includes(auth.currentUser?.email)) {
-      dislikedBy = post.dislikedBy.filter(
-        (a: any) => a !== auth.currentUser?.email
-      );
-    } else {
-      dislikedBy = post.dislikedBy;
-    }
+  if (post?.dislikedBy?.includes(auth.currentUser?.email as string)) {
+    dislikedBy = post?.dislikedBy.filter(
+      (a: any) => a !== auth.currentUser?.email
+    );
+  } else {
+    dislikedBy = post.dislikedBy || [];
   }
 
   if (post.likedBy) {
-    if (post.likedBy.includes(auth.currentUser?.email)) {
+    if (post.likedBy.includes(auth.currentUser?.email as string)) {
       likedBy = post.likedBy.filter((a: any) => a !== auth.currentUser?.email);
     } else {
       likedBy = [...post.likedBy, auth.currentUser?.email];
@@ -145,11 +167,22 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   const [notices, setNotices] = useState<NoticeType[]>([]);
   const noticeRef = useRef<any>();
 
+  const effectOnce = useRef(false);
+
+  console.log(posts);
+
   //post funcs
 
   //create post
-  const createPost = async (postCreate: PostCreate) => {
+  const createPost = async (postCreate: PostType) => {
     try {
+      if (!!!auth.currentUser) {
+        toast.error("You must be logged in to create a post");
+        return;
+      }
+
+      console.log(postCreate);
+
       const posts = (await getDocs(collection(db, "posts"))).docs.map((a) =>
         a.data()
       );
@@ -171,6 +204,8 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
         message: `${auth.currentUser?.displayName} just created a new post`,
         type: "POST",
       });
+      await getAllPosts();
+      return true;
     } catch (error) {
       console.log(error);
     }
@@ -179,24 +214,40 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   //get all post
   const getAllPosts = async () => {
     try {
-      const allPosts = await getDocs(collection(db, "posts"));
+      const allPosts = (await getDocs(collection(db, "posts"))).docs;
 
-      allPosts.forEach((s) => {
-        setPosts((prev: any) => [
-          ...prev,
-          { id: s.id, ref: s.ref, ...s.data() },
-        ]);
-      });
+      const updatedAllPosts = await Promise.all(
+        allPosts.map(async (a): Promise<PostType> => {
+          //check if current user liked post is following createdby user and marks post as favourite
+
+          const user = await getUser((a.data() as PostType).createdBy);
+          return {
+            ref: a.ref,
+            ...a.data(),
+            following: !!user.followers?.find(
+              (a) => a.email == auth.currentUser?.email
+            ),
+            liked: (a.data() as PostType).likedBy?.includes(
+              auth.currentUser?.email as string
+            ),
+            unliked: (a.data() as PostType).dislikedBy?.includes(
+              auth.currentUser?.email as string
+            ),
+            markedFavourite: currentUser?.favouritePosts?.includes(
+              (a.data() as PostType).id as number
+            ),
+          } as PostType;
+        })
+      );
+
+      setPosts(updatedAllPosts);
     } catch (error) {
       console.log(error);
     }
   };
 
   //comment to post
-  const commentOnPost = async (
-    ref: any,
-    comment: { message: string; name: string }
-  ) => {
+  const commentOnPost = async (ref: any, comment: PostComment) => {
     try {
       const post: any = (await getDoc(ref)).data();
       const existingComments = post.comments;
@@ -232,28 +283,40 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   };
 
   //like a post
-  const likePost = async (ref: any) => {
+  const likePost = async (ref: any): Promise<boolean> => {
     try {
-      const post: any = await getDoc(ref);
+      const post: PostType = (await getDoc(ref)).data() as PostType;
 
       const liked = like(post);
+      console.log(liked);
 
       await updateDoc(ref, {
         likedBy: liked.likedBy,
         dislikedBy: liked.dislikedBy,
       });
 
+      const isLiked = liked.likedBy.includes(auth.currentUser?.email);
+
+      toast.success(
+        `You ${isLiked ? "liked" : "unliked"} ${post.createdBy} post`
+      );
+
       await createNewNotice({
-        message: `${auth.currentUser?.displayName} liked on your post`,
+        message: `${auth.currentUser?.displayName} ${
+          isLiked ? "liked" : "unliked"
+        } your post`,
         type: "POST",
-        noticeFor: [post.data().email],
+        noticeFor: [post.createdBy],
       });
-    } catch (error) {
+
+      return isLiked;
+    } catch (error: any) {
       console.log(error);
+      throw Error(error);
     }
   };
   //dislike a post
-  const dislikePost = async (ref: any) => {
+  const dislikePost = async (ref: any): Promise<boolean> => {
     try {
       const post: any = (await getDoc(ref)).data();
 
@@ -263,13 +326,26 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
         dislikedBy: disliked.dislikedBy,
       });
 
+      const isdisLiked = disliked.dislikedBy.includes(auth.currentUser?.email);
+
+      toast.success(
+        `You ${isdisLiked ? "disliked" : "stopped to disliked"} ${
+          post.createdBy
+        } post`
+      );
+
       await createNewNotice({
-        message: `${auth.currentUser?.displayName} liked on your post`,
+        message: `${auth.currentUser?.displayName} ${
+          isdisLiked ? "disliked" : "stopped to disliked"
+        } your ${post.createdBy} your post`,
         type: "POST",
         noticeFor: [post.data().email],
       });
-    } catch (error) {
+
+      return isdisLiked;
+    } catch (error: any) {
       console.log(error);
+      throw Error(error);
     }
   };
 
@@ -300,7 +376,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   };
 
   //dislike a comment
-  const dislikeComment = async (postRef: any, commentId: any) => {
+  const dislikeComment = async (postRef: any, commentId: number) => {
     try {
       const post: any = (await getDoc(postRef)).data();
       const comment = post.comments.find((a: any) => a.id === commentId);
@@ -325,8 +401,39 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  //get post
+  const getAPost = async (postId: number): Promise<PostType> => {
+    console.log(postId);
+    
+    try {
+      const postSnapshot = (
+        await getDocs(query(collection(db, "posts"), where("id", "==", postId)))
+      ).docs[0];
+
+      const postDoc: PostType = postSnapshot.data() as PostType;
+      const user = await getUser(postDoc.createdBy);
+      return {
+        ref: postSnapshot.ref,
+        ...postDoc,
+        following: !!user.followers?.find(
+          (a) => a.email == auth.currentUser?.email
+        ),
+        liked: postDoc.likedBy?.includes(auth.currentUser?.email as string),
+        unliked: postDoc.dislikedBy?.includes(
+          auth.currentUser?.email as string
+        ),
+        markedFavourite: currentUser?.favouritePosts?.includes(
+          postDoc.id as number
+        ),
+      } as PostType;
+    } catch (error: any) {
+      console.log(error);
+      throw Error(error);
+    }
+  };
+
   //mark post as favourite
-  const markPostFavourite = async (postId: number) => {
+  const markPostFavourite = async (postId: number): Promise<boolean> => {
     try {
       const user = (
         await getDocs(
@@ -343,15 +450,22 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
 
       let newFavouritePosts;
 
-      if (favouritePosts)
-        if (favouritePosts?.includes(postId))
-          newFavouritePosts = favouritePosts.filter((a) => a !== postId);
-        else newFavouritePosts = [...favouritePosts, postId];
-      else newFavouritePosts = [postId];
+      if (favouritePosts?.includes(postId))
+        newFavouritePosts = favouritePosts.filter((a) => a !== postId);
+      else newFavouritePosts = [...(favouritePosts || []), postId];
 
       await updateDoc(user[0].ref, { favouritePosts: newFavouritePosts });
-    } catch (error) {
+
+      const isFavourite = newFavouritePosts?.includes(postId);
+
+      toast.success(
+        `You ${isFavourite ? "marked" : "unmarked"} this post as favourite`
+      );
+
+      return isFavourite;
+    } catch (error: any) {
       console.log(error);
+      throw Error(error);
     }
   };
 
@@ -394,11 +508,12 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
 
       ss.forEach(async (s) => {
         const notice = s.data();
-        if (notice.seen?.includes(auth.currentUser?.email as string)) return;
 
-        if (!notice.noticeFor.includes(auth.currentUser?.email as string)) {
+        if (!notice?.noticeFor.includes(auth.currentUser?.email as string)) {
           return;
         }
+
+        if (notice.seen?.includes(auth.currentUser?.email as string)) return;
 
         await updateDoc(s.ref, {
           seen: [...notice.seen, auth.currentUser?.email],
@@ -430,22 +545,30 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   //create user
   const signUpUser = async (user: UserType) => {
     try {
-      if (!auth.currentUser)
+      if (auth.currentUser?.email != user.email)
         await createUserWithEmailAndPassword(auth, user.email, user.password);
       const userExist = await getDocs(
         query(collection(db, "users"), where("email", "==", user.email))
       );
-      if (!userExist.empty) await addDoc(collection(db, "users"), user);
+      if (userExist.empty) await addDoc(collection(db, "users"), user);
+      await updateCurrentUser(user.email);
     } catch (error) {
       console.log(error);
     }
   };
 
   //update current user
-  const updateCurrentUser = async (email: string) => {
+  const updateCurrentUser = async (email?: string) => {
+    if (!!!auth.currentUser) {
+      toast.error("You are not logged in");
+      return;
+    }
     try {
       const snapshots = await getDocs(
-        query(collection(db, "users"), where("email", "==", email))
+        query(
+          collection(db, "users"),
+          where("email", "==", email || auth.currentUser.email)
+        )
       );
 
       if (snapshots.empty) toast.error("No user exist with this email");
@@ -467,7 +590,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   const loginUser = async (user: LoginType) => {
     try {
       await signInWithEmailAndPassword(auth, user.email, user.password);
-      updateCurrentUser(user.email);
+      await updateCurrentUser(user.email);
     } catch (error) {
       console.log(error);
     }
@@ -476,30 +599,49 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   //follow user
   const followUser = async (email: string) => {
     try {
-      if (!auth.currentUser)
-        return toast.error("You must be logged in to follow user");
+      if (!currentUser) {
+        toast.error("You must be logged in to follow or unfollow user");
+        return false;
+      }
 
-      const snapshots = await getDocs(
-        query(collection(db, "users"), where("email", "==", email))
+      const snapshots = (
+        await getDocs(
+          query(collection(db, "users"), where("email", "==", email))
+        )
+      ).docs;
+
+      const currentFollowers = snapshots[0].data().followers as followRequest[];
+      let status: boolean = false;
+      let newFollowers: followRequest[];
+      if (!!currentFollowers?.find((a) => a.email == auth.currentUser?.email)) {
+        status = false;
+        newFollowers = currentFollowers.filter(
+          (a) => a.email !== auth.currentUser?.email
+        );
+      } else {
+        status = true;
+        newFollowers = [
+          ...(currentFollowers || []),
+          { status: "PENDING", email: auth.currentUser?.email as string },
+        ];
+      }
+
+      await updateDoc(snapshots[0].ref, {
+        followers: newFollowers,
+      });
+
+      await createNewNotice({
+        message: status
+          ? `${auth.currentUser?.email} sent you a follow request`
+          : `${auth.currentUser?.email} unfollowed you. you will no longer be able to receive notifications if he make interacts on our forum`,
+        type: "USER",
+        noticeFor: [email],
+      });
+      toast.success(
+        `${status ? "Follow request sent to" : "Unfollowed"} ${email}`
       );
 
-      snapshots.forEach(async (s) => {
-        await updateDoc(s.ref, {
-          followers: s.data().following
-            ? [
-                ...s.data().following,
-                { status: "PENDING", email: auth.currentUser?.email },
-              ]
-            : [{ status: "PENDING", email: auth.currentUser?.email }],
-        });
-
-        await createNewNotice({
-          message: `${auth.currentUser?.email} sent you a follow request`,
-          type: "USER",
-          noticeFor: [email],
-        });
-        toast.success(`Now following ${email}`);
-      });
+      return status;
     } catch (error) {
       console.log(error);
     }
@@ -636,20 +778,43 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   //getAllUsers
   const getAllUsers = async () => {
     try {
-      const snapshots = await getDocs(collection(db, "users"));
-      const allUsers: any[] = [];
+      const snapshots = (await getDocs(collection(db, "users"))).docs;
 
-      snapshots.forEach((s) => allUsers.push(s.data()));
-      setAllUsers(allUsers);
+      setAllUsers(
+        snapshots
+          .map((a) => a.data())
+          .filter((a) => a.email !== auth.currentUser?.email)
+      );
     } catch (error) {
       console.log(error);
     }
   };
 
+  //get one user
+  const getUser = async (email: string): Promise<UserType> => {
+    try {
+      return (
+        await getDocs(
+          query(collection(db, "users"), where("email", "==", email))
+        )
+      ).docs[0].data() as UserType;
+    } catch (error: any) {
+      console.log(error);
+      throw Error(error.message);
+    }
+  };
+
+  //call use effect once
   useEffect(() => {
-    getAllUsers();
-    getAllPosts();
-    getNotice();
+    if (effectOnce.current) {
+      getAllUsers();
+      getAllPosts();
+      getNotice();
+      updateCurrentUser(auth.currentUser?.email as string);
+    }
+    return () => {
+      effectOnce.current = true;
+    };
   }, []);
 
   const contextProps: UserContextType = {
@@ -658,10 +823,12 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     signUpUser,
     allUsers,
     getAllUsers,
+    getUser,
     acceptFollowRequest,
     cancelPendingRequest,
     commentOnPost,
     createPost,
+    getAPost,
     declinePendingRequest,
     dislikeComment,
     dislikePost,
