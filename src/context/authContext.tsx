@@ -1,7 +1,6 @@
 import {
   addDoc,
   collection,
-  DocumentData,
   getDoc,
   getDocs,
   query,
@@ -404,7 +403,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   //get post
   const getAPost = async (postId: number): Promise<PostType> => {
     console.log(postId);
-    
+
     try {
       const postSnapshot = (
         await getDocs(query(collection(db, "posts"), where("id", "==", postId)))

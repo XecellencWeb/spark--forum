@@ -4,14 +4,8 @@ import { FaRegHeart } from "react-icons/fa";
 import { FaRegCommentDots } from "react-icons/fa6";
 import { GrLike } from "react-icons/gr";
 import { GrDislike } from "react-icons/gr";
-import { useEffect, useRef, useState } from "react";
-import {
-  PostType,
-  useAuth,
-  UserContextType,
-  UserType,
-} from "../context/authContext";
-import { auth } from "../firebase/config";
+import { useState } from "react";
+import { PostType, useAuth, UserContextType } from "../context/authContext";
 import { Link } from "react-router-dom";
 
 export const thread = [
@@ -93,8 +87,8 @@ export const PostTemplate = ({ post }: { post: PostType }) => {
   const {
     likePost,
     dislikePost,
-    likeComment,
-    dislikeComment,
+    // likeComment,
+    // dislikeComment,
     markPostFavourite,
     followUser,
   }: Partial<UserContextType> = useAuth();
@@ -151,7 +145,10 @@ export const PostTemplate = ({ post }: { post: PostType }) => {
             }}
             color={dislikedPost ? "#012dff" : "#ccc"}
           />
-         <Link to={post.id?.toString() as string}> <FaRegCommentDots /></Link>
+          <Link to={post.id?.toString() as string}>
+            {" "}
+            <FaRegCommentDots />
+          </Link>
           <FaRegHeart
             color={markedFavourite ? "#012dff" : "#ccc"}
             onClick={async () => {
