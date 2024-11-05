@@ -5,7 +5,12 @@ import { FaRegCommentDots } from "react-icons/fa6";
 import { GrLike } from "react-icons/gr";
 import { GrDislike } from "react-icons/gr";
 import { useState } from "react";
-import { PostType, useAuth, UserContextType } from "../context/authContext";
+import {
+  PostComment,
+  PostType,
+  useAuth,
+  UserContextType,
+} from "../context/authContext";
 import { Link } from "react-router-dom";
 
 export const thread = [
@@ -83,7 +88,67 @@ export const thread = [
   },
 ];
 
-export const PostTemplate = ({ post }: { post: PostType }) => {
+export const CommentTemplate = ({
+  postRef,
+  comment,
+  isMore,
+}: {
+  postRef: any;
+  comment: PostComment;
+  isMore?: boolean;
+}) => {
+  const { likeComment, dislikeComment }: Partial<UserContextType> = useAuth();
+  const [likedComment, setLikedComment] = useState(comment.liked);
+  const [dislikedComment, setDislikedComment] = useState(comment.unliked);
+
+  return (
+    <div className="flex gap-2 items-start mb-4">
+      <FaUserCircle size={50} />{" "}
+      <div className="flex flex-col gap-0">
+        <h3 className="font-semibold">{comment.username}</h3>
+        <span className="text-gray-400">{formatTime(comment.createdAt!)}</span>
+        <p className="mt-1">{comment.content}</p>
+        <div className="text-slate-500 flex gap-3 mt-2">
+          <GrLike
+            onClick={async () => {
+              setDislikedComment(false);
+              setLikedComment((prev) => !prev);
+              setLikedComment(
+                (await likeComment?.(
+                  postRef,
+                  comment.id as number
+                )) as unknown as boolean
+              );
+            }}
+            color={likedComment ? "#012dff" : "#aaa"}
+          />
+          <GrDislike
+            onClick={async () => {
+              setLikedComment(false);
+              setDislikedComment((prev) => !prev);
+              setDislikedComment(
+                (await dislikeComment?.(
+                  postRef,
+                  comment.id as number
+                )) as unknown as boolean
+              );
+            }}
+            color={dislikedComment ? "#012dff" : "#aaa"}
+          />
+        </div>
+        {isMore && <div className="font-bold text-blue-700 ">...</div>}
+      </div>
+    </div>
+  );
+};
+
+export const PostTemplate = ({
+  post,
+  detailsOpened,
+}: {
+  post: PostType;
+  detailsOpened?: boolean;
+}) => {
   const {
     likePost,
     dislikePost,
@@ -97,8 +162,12 @@ export const PostTemplate = ({ post }: { post: PostType }) => {
   const [dislikedPost, setdisLikedPost] = useState(post.unliked);
   const [markedFavourite, setMarkedFavourite] = useState(post.markedFavourite);
 
+  const comments = post.comments?.sort(
+    (a, b) => (b.id as number) - (a.id as number)
+  );
+
   return (
-    <div className="mb-8">
+    <div className="mb-8 max-w-lg mx-auto">
       <div className="flex gap-2 items-center">
         <FaUserCircle size={50} />{" "}
         <div className="flex flex-col gap-0">
@@ -115,11 +184,11 @@ export const PostTemplate = ({ post }: { post: PostType }) => {
             >
               {following ? "unfollow" : "follow"}
             </button>
-            {post?.comments?.length! > 1 && (
+            {/* {post?.comments?.length! > 1 && (
               <button className="text-blue-600 font-bold ml-4 py-2 px-4 border-2 border-gray-200 rounded-full">
                 View Conversation
               </button>
-            )}
+            )} */}
           </h3>
           <span className="text-gray-400">{formatTime(post?.createdAt!)}</span>
         </div>
@@ -133,7 +202,7 @@ export const PostTemplate = ({ post }: { post: PostType }) => {
               setLikedPost((prev) => !prev);
               setLikedPost((await likePost?.(post.ref)) as unknown as boolean);
             }}
-            color={likedPost ? "#012dff" : "#ccc"}
+            color={likedPost ? "#012dff" : "#aaa"}
           />
           <GrDislike
             onClick={async () => {
@@ -143,14 +212,14 @@ export const PostTemplate = ({ post }: { post: PostType }) => {
                 (await dislikePost?.(post.ref)) as unknown as boolean
               );
             }}
-            color={dislikedPost ? "#012dff" : "#ccc"}
+            color={dislikedPost ? "#012dff" : "#aaa"}
           />
           <Link to={post.id?.toString() as string}>
             {" "}
-            <FaRegCommentDots />
+            <FaRegCommentDots color="#aaa" />
           </Link>
           <FaRegHeart
-            color={markedFavourite ? "#012dff" : "#ccc"}
+            color={markedFavourite ? "#012dff" : "#aaa"}
             onClick={async () => {
               setMarkedFavourite((prev) => !prev);
               setMarkedFavourite(
@@ -164,43 +233,18 @@ export const PostTemplate = ({ post }: { post: PostType }) => {
       </div>
 
       <div className="pl-4 mt-4">
-        <details>
+        <details open={detailsOpened}>
           <summary>
-            {post?.comments?.[0] && (
-              <div className="flex gap-2 items-start mb-4">
-                <FaUserCircle size={50} />{" "}
-                <div className="flex flex-col gap-0">
-                  <h3 className="font-semibold">{post.comments[0].username}</h3>
-                  <span className="text-gray-400">
-                    {formatTime(post.comments[0].createdAt!)}
-                  </span>
-                  <p className="mt-1">{post.comments[0].content}</p>
-                  <div className="text-slate-500 flex gap-3 mt-2">
-                    <GrLike />
-                    <GrDislike />
-                  </div>
-                  {post.comments[1] && (
-                    <div className="font-bold text-blue-700 ">...</div>
-                  )}
-                </div>
-              </div>
+            {comments?.[0] && (
+              <CommentTemplate
+                postRef={post.ref}
+                comment={comments[0]}
+                isMore={!!comments[1]}
+              />
             )}
           </summary>
-          {post?.comments?.slice(1)?.map((comment) => (
-            <div className="flex gap-2 items-start mb-4">
-              <FaUserCircle size={50} />{" "}
-              <div className="flex flex-col gap-0">
-                <h3 className="font-semibold">{comment.username}</h3>
-                <span className="text-gray-400">
-                  {formatTime(comment?.createdAt!)}
-                </span>
-                <p className="mt-1">{comment.content}</p>
-                <div className="text-slate-500 flex gap-3 mt-2">
-                  <GrLike />
-                  <GrDislike />
-                </div>
-              </div>
-            </div>
+          {comments?.slice(1)?.map((comment) => (
+            <CommentTemplate postRef={post.ref} comment={comment} />
           ))}
         </details>
       </div>

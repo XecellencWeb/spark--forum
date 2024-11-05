@@ -31,11 +31,15 @@ export type NoticeType = {
   noticeFor?: string[];
 };
 
-type PostComment = {
-  // id:number,
+export type PostComment = {
+  id?: number;
   username: string;
   createdAt?: string;
   content: string;
+  likedBy?: string[];
+  dislikedBy?: string[];
+  liked?: boolean;
+  unliked?: boolean;
 };
 
 export type PostType = {
@@ -107,7 +111,7 @@ export type UserContextType = {
 };
 
 //like query
-const like = (post: PostType) => {
+const like = (post: PostType | PostComment) => {
   let likedBy;
   let dislikedBy;
 
@@ -223,6 +227,13 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
           return {
             ref: a.ref,
             ...a.data(),
+            comments: (a.data() as PostType).comments?.map((a) => {
+              return {
+                ...a,
+                liked: a.likedBy?.includes(auth.currentUser?.email!),
+                unliked: a.dislikedBy?.includes(auth.currentUser?.email!),
+              };
+            }),
             following: !!user.followers?.find(
               (a) => a.email == auth.currentUser?.email
             ),
@@ -349,15 +360,18 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   };
 
   //like a comment
-  const likeComment = async (postRef: any, commentId: any) => {
+  const likeComment = async (
+    postRef: any,
+    commentId: any
+  ): Promise<boolean> => {
     try {
-      const post: any = (await getDoc(postRef)).data();
-      const comment = post.comments.find((a: any) => a.id === commentId);
+      const post: PostType = (await getDoc(postRef)).data() as PostType;
+      const comment = post.comments?.find((a: any) => a.id === commentId);
 
-      const liked = like(comment);
+      const liked = like(comment!);
 
       await updateDoc(postRef, {
-        comments: post.comments.map((a: any) => {
+        comments: post.comments?.map((a: any) => {
           if (a.id === commentId) {
             return {
               ...a,
@@ -369,21 +383,35 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
           return a;
         }),
       });
-    } catch (error) {
+
+      const couldLike = liked.likedBy.includes(auth.currentUser?.email);
+
+      toast.success(
+        `You ${couldLike ? "liked" : "unliked"} on ${
+          post.createdBy
+        } post comment`
+      );
+
+      return couldLike;
+    } catch (error: any) {
       console.log(error);
+      throw Error(error);
     }
   };
 
   //dislike a comment
-  const dislikeComment = async (postRef: any, commentId: number) => {
+  const dislikeComment = async (
+    postRef: any,
+    commentId: number
+  ): Promise<boolean> => {
     try {
-      const post: any = (await getDoc(postRef)).data();
-      const comment = post.comments.find((a: any) => a.id === commentId);
+      const post: PostType = (await getDoc(postRef)).data() as PostType;
+      const comment = post.comments?.find((a: any) => a.id === commentId);
 
       const disliked = dislike(comment);
 
       await updateDoc(postRef, {
-        comments: post.comments.map((a: any) => {
+        comments: post.comments?.map((a: any) => {
           if (a.id === commentId) {
             return {
               ...a,
@@ -395,8 +423,21 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
           return a;
         }),
       });
-    } catch (error) {
+
+      const couldDislike = disliked.dislikedBy.includes(
+        auth.currentUser?.email
+      );
+
+      toast.success(
+        `You ${couldDislike ? "disliked" : "stopped disliking"} ${
+          post.createdBy
+        } post comment`
+      );
+
+      return couldDislike;
+    } catch (error: any) {
       console.log(error);
+      throw Error(error);
     }
   };
 
@@ -414,6 +455,13 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
       return {
         ref: postSnapshot.ref,
         ...postDoc,
+        comments: postDoc.comments?.map((a) => {
+          return {
+            ...a,
+            liked: a.likedBy?.includes(auth.currentUser?.email!),
+            unliked: a.dislikedBy?.includes(auth.currentUser?.email!),
+          };
+        }),
         following: !!user.followers?.find(
           (a) => a.email == auth.currentUser?.email
         ),

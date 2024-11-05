@@ -4,56 +4,61 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    background-image: url("/imgs/speech-bg.png");
+    overflow-x: clip;
+    font-family: "Roboto", sans-serif;
+    @apply bg-slate-200 text-slate-500;
+  }
 
-@layer base{
-    body{
-        background-image: url('/imgs/speech-bg.png');
-        overflow-x: clip;
-        font-family: "Roboto", sans-serif;
-        @apply bg-slate-200 text-slate-700;
-    }
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply text-slate-600;
+  }
 
-    summary{
-        list-style: none;
-    }
+  summary {
+    list-style: none;
+  }
 }
 
-@layer utilities{
-   .bg-pattern{
-      background-image: url('/imgs/speech-bg.svg')
+@layer utilities {
+  .bg-pattern {
+    background-image: url("/imgs/speech-bg.svg");
+  }
 
-   }
+  .icon-links a {
+    @apply flex items-center gap-1;
+  }
+  .page-frame {
+    @apply rounded-[2rem] container w-full overflow-x-clip mb-20 border-gray-600 mx-auto -mt-[50vh] bg-white;
+    box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
+    translate: 200%;
+    opacity: 0;
+    animation: slide-in 2s forwards;
+  }
 
-    .icon-links  a{
-        @apply flex items-center gap-1;
+  .page-content {
+    @apply overflow-y-auto min-h-[60vh] max-h-[50rem];
+  }
+
+  .page-content::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .page-content::-webkit-scrollbar-thumb {
+    @apply bg-gray-200 rounded-md;
+  }
+
+  @keyframes slide-in {
+    to {
+      opacity: 1;
+      translate: 0 0;
     }
-    .page-frame{
-        @apply rounded-[2rem] container w-full overflow-x-clip mb-20 border-gray-600 mx-auto -mt-[50vh] bg-white;
-        box-shadow: rgba(17, 12, 46, 0.15) 0px 48px 100px 0px;
-        translate: 200%;
-        opacity: 0;
-        animation: slide-in 2s forwards;
-    }
-
-    .page-content{
-        @apply overflow-y-auto min-h-[60vh] max-h-[50rem];
-    }
-
-    .page-content::-webkit-scrollbar{
-        width: 8px;
-        height: 8px;
-    }
-
-    .page-content::-webkit-scrollbar-thumb{
-        @apply bg-gray-200 rounded-md;
-    }
-
-
-    @keyframes slide-in {
-        to{
-            opacity: 1;
-            translate: 0 0;
-        }
-    }
-} 
-
+  }
+}
