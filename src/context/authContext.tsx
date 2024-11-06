@@ -26,9 +26,11 @@ const UserContext = createContext({});
 
 export type NoticeType = {
   seen?: string[];
+  delivered?: string[];
   message: string;
   type: "USER" | "POST";
   noticeFor?: string[];
+  read?: boolean;
 };
 
 export type PostComment = {
@@ -75,6 +77,7 @@ export type UserType = {
   password: string;
   followers?: followRequest[];
   favouritePosts?: number[];
+  aboutUser?: string;
 };
 
 export type LoginType = {
@@ -86,6 +89,7 @@ export type UserContextType = {
   //users functions
   currentUser: UserType | undefined;
   loginUser: (user: LoginType) => void;
+  updateUser: (user: UserType) => void;
   signUpUser: (user: UserType) => void;
   allUsers: UserType[];
   getAllUsers: () => void;
@@ -106,8 +110,11 @@ export type UserContextType = {
   dislikeComment: (postref: any, commentId: number) => void;
   markPostFavourite: (postId: number) => void;
   posts: PostType[];
-  followers: UserType[];
+  followers?: UserType[];
+  pendingFollowers?: UserType[];
+  following?: UserType[];
   notices: any[];
+  unreadNotices: boolean;
 };
 
 //like query
@@ -165,9 +172,12 @@ const dislike = (post: any) => {
 const AuthContext = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<UserType>();
   const [posts, setPosts] = useState<PostType[]>([]);
-  const [followers, setFollowers] = useState<any>();
-  const [allUsers, setAllUsers] = useState<any>([]);
+  const [followers, setFollowers] = useState<UserType[]>();
+  const [following, setFollowing] = useState<UserType[]>();
+  const [pendingFollowers, setPendingFollowers] = useState<UserType[]>();
+  const [allUsers, setAllUsers] = useState<UserType[]>([]);
   const [notices, setNotices] = useState<NoticeType[]>([]);
+  const [unreadNotices, setUnreadNotices] = useState(false);
   const noticeRef = useRef<any>();
 
   const effectOnce = useRef(false);
@@ -203,7 +213,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
         createdAt: Date.now(),
       });
 
-      createNewNotice({
+      await createNewNotice({
         message: `${auth.currentUser?.displayName} just created a new post`,
         type: "POST",
       });
@@ -517,15 +527,8 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   };
 
   //notifications func
-  const createNewNotice = async ({
-    message,
-    type,
-    noticeFor,
-  }: {
-    message: string;
-    type: "USER" | "POST";
-    noticeFor?: string[];
-  }) => {
+  const createNewNotice = async (notice: NoticeType) => {
+    const { message, type, noticeFor } = notice;
     try {
       const user = (
         await getDocs(
@@ -537,6 +540,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
       ).docs;
       await addDoc(collection(db, "notifications"), {
         seen: [auth.currentUser?.email],
+        delivered: [auth.currentUser?.email],
         type,
         message,
         noticeFor: noticeFor || user[0].data().followers || [],
@@ -554,22 +558,29 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
       const ss = await getDocs(collection(db, "notifications"));
 
       ss.forEach(async (s) => {
-        const notice = s.data();
+        const notice: NoticeType = s.data() as NoticeType;
 
-        if (!notice?.noticeFor.includes(auth.currentUser?.email as string)) {
+        if (!notice?.noticeFor?.includes(auth.currentUser?.email as string)) {
           return;
         }
 
-        if (notice.seen?.includes(auth.currentUser?.email as string)) return;
+        if (notice.delivered?.includes(auth.currentUser?.email as string))
+          return;
 
         await updateDoc(s.ref, {
-          seen: [...notice.seen, auth.currentUser?.email],
+          delivered: [...(notice?.delivered || []), auth.currentUser?.email],
         });
 
         delete notice.seen;
         delete notice.noticeFor;
 
-        setNotices((prev: any) => [...prev, notice]);
+        setNotices((prev: any) => [
+          ...prev,
+          {
+            ...notice,
+            read: notice.seen?.includes(auth.currentUser?.email as string),
+          },
+        ]);
 
         if (notice.type == "USER") {
           await updateCurrentUser(auth.currentUser?.email as string);
@@ -578,6 +589,8 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
           await getAllPosts();
         }
 
+        await unreadNotice();
+
         toast.success("Hi, incoming notification");
 
         noticeRef.current = setTimeout(getNotice, 200);
@@ -585,6 +598,24 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  //unread notifications
+  const unreadNotice = async () => {
+    const involvedNotices: NoticeType[] = (
+      await getDocs(
+        query(
+          collection(db, "notifications"),
+          where("noticeFor", "array-contains", auth.currentUser)
+        )
+      )
+    ).docs.map((a) => a.data()) as NoticeType[];
+
+    setUnreadNotices(
+      !!involvedNotices.find((a) =>
+        a.seen?.includes(auth.currentUser?.email as string)
+      )
+    );
   };
 
   //user funcs
@@ -628,6 +659,28 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
       toast.success("Log in successfull");
       setCurrentUser(loginUser);
       await getAllFollowingUser();
+      await followingUsers();
+      await getPendingFollowRequest();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  //update user
+  const updateUser = async (updateData: UserType) => {
+    try {
+      const userRef = (
+        await getDocs(
+          query(
+            collection(db, "users"),
+            where("email", "==", auth.currentUser?.email)
+          )
+        )
+      ).docs[0].ref;
+
+      await updateDoc(userRef, updateData);
+
+      toast.success("Your records has been updated successfully");
     } catch (error) {
       console.log(error);
     }
@@ -694,6 +747,36 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  //get pending request
+  const getPendingFollowRequest = async () => {
+    try {
+      const followers = (
+        await getDocs(
+          query(
+            collection(db, "users"),
+            where("email", "==", auth.currentUser?.email)
+          )
+        )
+      ).docs[0]
+        .data()
+        .followers.filter((a: followRequest) => a.status === "PENDING");
+
+      const pendingFollowers: UserType[] = await Promise.all(
+        followers.map(async (a: followRequest) => {
+          return (
+            await getDocs(
+              query(collection(db, "users"), where("email", "==", a.email))
+            )
+          ).docs[0].data();
+        })
+      );
+
+      setPendingFollowers(pendingFollowers);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   //get all  following users
   const getAllFollowingUser = async () => {
     try {
@@ -707,7 +790,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
       currentUserSnapshot.forEach(async (s) => {
         const followers = s.data().followers;
         const acceptedfollowers: string[] = followers
-          .filter((a: any) => a.status == "ACCEPTED")
+          // .filter((a: any) => a.status == "ACCEPTED")
           .map((a: any) => a.email);
 
         const followersSnapshot = await getDocs(
@@ -724,6 +807,29 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const followingUsers = async () => {
+    try {
+      setFollowing(
+        (
+          await getDocs(
+            query(collection(db, "users"), where("followers", "!=", undefined))
+          )
+        ).docs
+          .filter(
+            (a) =>
+              !!a
+                .data()
+                .followers?.find(
+                  (a: followRequest) =>
+                    a.email == auth.currentUser?.email &&
+                    a.status === "ACCEPTED"
+                )
+          )
+          .map((a) => a.data()) as UserType[]
+      );
+    } catch (error) {}
   };
 
   //unfollow a user
@@ -830,7 +936,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
       setAllUsers(
         snapshots
           .map((a) => a.data())
-          .filter((a) => a.email !== auth.currentUser?.email)
+          .filter((a) => a.email !== auth.currentUser?.email) as UserType[]
       );
     } catch (error) {
       console.log(error);
@@ -869,6 +975,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     loginUser,
     signUpUser,
     allUsers,
+    updateUser,
     getAllUsers,
     getUser,
     acceptFollowRequest,
@@ -885,8 +992,11 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     markPostFavourite,
     unFollowUser,
     followers,
+    pendingFollowers,
+    following,
     notices,
     posts,
+    unreadNotices,
   };
 
   return (

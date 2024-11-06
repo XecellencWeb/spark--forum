@@ -70,7 +70,7 @@ export const UserTemplate = ({ user }: { user: UserType }) => {
 
         <div className="flex gap-1 items-center text-gray-500 font-semibold">
           <FaUserCircle size={20} />
-          <Link to="/profile">Profile</Link>
+          <Link to={`/profile/${user.email.split("@")[0]}`}>Profile</Link>
         </div>
       </div>
     </div>

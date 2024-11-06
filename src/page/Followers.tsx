@@ -1,13 +1,21 @@
-import { UserType } from "../context/authContext"
-import { user_list, UserTemplate } from "./UserPage"
-
+import { useAuth, UserContextType, UserType } from "../context/authContext";
+import { UserTemplate } from "./UserPage";
 
 const Followers = () => {
+  const { followers, pendingFollowers }: Partial<UserContextType> = useAuth();
   return (
     <div className="max-w-3xl my-4 mx-auto flex flex-col gap-3">
-    {user_list.filter(a=>a?.followed?.includes('current'))?.map((user )=><UserTemplate user={user as unknown as UserType}/>)}
-  </div>
-  )
-}
+      <h4>Accepted Follwers</h4>
+      {followers?.map((user) => (
+        <UserTemplate user={user as unknown as UserType} />
+      ))}
+      
+      <h4>Pending Follwers</h4>
+      {pendingFollowers?.map((user) => (
+        <UserTemplate user={user as unknown as UserType} />
+      ))}
+    </div>
+  );
+};
 
-export default Followers
+export default Followers;

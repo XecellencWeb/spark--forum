@@ -49,6 +49,10 @@ const App = () => {
             element={<PageFrame heading="User Profile" Page={ProfilePage} />}
           />
           <Route
+            path="/profile/:user"
+            element={<PageFrame heading="User Profile" Page={ProfilePage} />}
+          />
+          <Route
             path="/notifications"
             element={
               <PageFrame heading="Notifications" Page={NotificationPage} />
