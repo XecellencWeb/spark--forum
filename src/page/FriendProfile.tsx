@@ -40,7 +40,7 @@ const FriendProfile = () => {
             </div>
           </div>
           <div className="mb-4">
-            <h4 className="font-bold ml-4 mb-1">Logistics Career Role</h4>
+            <h4 className="font-bold ml-4 mb-1">Career Role</h4>
             <div className="bg-gray-100 px-4 py-2 border-[1px] border-gray-300 rounded-full">
               {friend?.role}
             </div>

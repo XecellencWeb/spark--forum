@@ -30,10 +30,10 @@ const ProfilePage = () => {
     <div className="max-w-3xl mx-auto mt-10">
       <div className="flex gap-x-3 gap-y-1 items-center flex-wrap">
         <FaUserCircle size={100} />{" "}
-        <button className="bg-blue-500 hover:bg-blue-300 font-bold px-3 py-2 rounded-full text-white">
+        <label className="bg-blue-500 hover:bg-blue-300 font-bold px-3 py-2 rounded-full text-white">
+          <input type="file" hidden />
           Change Picture
-        </button>
-        
+        </label>
       </div>
 
       {editing ? (
@@ -50,7 +50,7 @@ const ProfilePage = () => {
             />
           </div>
           <div className="mb-4">
-            <h4 className="font-bold ml-4 mb-1">Logistics Career Role</h4>
+            <h4 className="font-bold ml-4 mb-1">Career Role</h4>
             <Select
               defaultValue={{ value: updateUser.role, label: updateUser.role }}
               onChange={(opt) =>
@@ -91,18 +91,19 @@ const ProfilePage = () => {
               </div>
             </div>
             <div className="mb-4">
-              <h4 className="font-bold ml-4 mb-1">Logistics Career Role</h4>
+              <h4 className="font-bold ml-4 mb-1">Career Role</h4>
               <div className="bg-gray-100 px-4 py-2 border-[1px] border-gray-300 rounded-full">
                 {currentUser?.role}
               </div>
             </div>
-            {!!currentUser?.aboutUser && <div className="mb-4">
-              <h4 className="font-bold ml-4 mb-1">About You
-              </h4>
-              <div className="bg-gray-100 px-4 py-2 border-[1px] border-gray-300 rounded-full">
-                {currentUser?.aboutUser}
+            {!!currentUser?.aboutUser && (
+              <div className="mb-4">
+                <h4 className="font-bold ml-4 mb-1">About You</h4>
+                <div className="bg-gray-100 px-4 py-2 border-[1px] border-gray-300 rounded-full">
+                  {currentUser?.aboutUser}
+                </div>
               </div>
-            </div>}
+            )}
             <button
               onClick={() => setEditing(true)}
               className="ml-auto w-fit block font-bold bg-blue-500 hover:bg-blue-300 text-white px-3 py-2 rounded-full"
