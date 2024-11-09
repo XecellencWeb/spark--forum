@@ -214,7 +214,7 @@ export const PostTemplate = ({
             }}
             color={dislikedPost ? "#012dff" : "#aaa"}
           />
-          <Link to={post.id?.toString() as string}>
+          <Link to={'/post/'+post.id?.toString() as string}>
             {" "}
             <FaRegCommentDots color="#aaa" />
           </Link>

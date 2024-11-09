@@ -12,6 +12,7 @@ import FavoritePage from "./page/FavoritePage";
 import { Toaster } from "react-hot-toast";
 import AuthContext from "./context/authContext";
 import SinglePagePostPage from "./page/SinglePagePostPage";
+import FriendProfile from "./page/FriendProfile";
 
 const App = () => {
   return (
@@ -50,7 +51,7 @@ const App = () => {
           />
           <Route
             path="/profile/:user"
-            element={<PageFrame heading="User Profile" Page={ProfilePage} />}
+            element={<PageFrame heading="User Profile" Page={FriendProfile} />}
           />
           <Route
             path="/notifications"
@@ -65,9 +66,9 @@ const App = () => {
             }
           />
         </Routes>
-        <div className="text-center mb-8">
+        {/* <div className="text-center mb-8">
           &copy; Smart Chain. Powered by Spark Media.
-        </div>
+        </div> */}
       </BrowserRouter>
     </AuthContext>
   );

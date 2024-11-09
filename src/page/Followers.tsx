@@ -9,10 +9,10 @@ const Followers = () => {
       {followers?.map((user) => (
         <UserTemplate user={user as unknown as UserType} />
       ))}
-      
+
       <h4>Pending Follwers</h4>
       {pendingFollowers?.map((user) => (
-        <UserTemplate user={user as unknown as UserType} />
+        <UserTemplate pendingFollower user={user as unknown as UserType} />
       ))}
     </div>
   );

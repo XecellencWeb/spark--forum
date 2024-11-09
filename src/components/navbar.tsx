@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import { useState } from "react";
 import { BiUser, BiUserCheck, BiUserPlus } from "react-icons/bi";
 import { BsPostcard } from "react-icons/bs";
@@ -13,23 +13,17 @@ import { useAuth, UserContextType } from "../context/authContext";
 import SignUp from "./SignUp";
 import LogIn from "./LogIn";
 
-
 const NavBar = () => {
   const [navbarClosed, setNavbarClosed] = useState(false);
 
-  const [params,setSearchParams] = useSearchParams()
+  const [params, setSearchParams] = useSearchParams();
 
-  
-
-  const { currentUser }: Partial<UserContextType> = useAuth();
+  const { currentUser, unreadNotices }: Partial<UserContextType> = useAuth();
 
   return (
     <>
-      <Popup open={params.get('auth') === 'true'}>
-        {params.get('signup') === 'true'?
-          <SignUp/>
-        :<LogIn/>}
-
+      <Popup open={params.get("auth") === "true"}>
+        {params.get("signup") === "true" ? <SignUp /> : <LogIn />}
       </Popup>
       <div className="bg-blue-950 p-4 border-b border-gray-700">
         <div className="container mx-auto flex gap-3 items-center">
@@ -48,7 +42,10 @@ const NavBar = () => {
                   <Link to="/favourite">
                     <TiHeartFullOutline />
                   </Link>
-                  <Link to="/notifications">
+                  <Link className="relative" to="/notifications">
+                    {unreadNotices && (
+                      <div className="absolute top-0 right-0 bg-red-600 w-4 h-4 rounded-full -translate-y-1/2 translate-x-1/2" />
+                    )}
                     <FaBell />
                   </Link>
                 </div>
@@ -88,7 +85,10 @@ const NavBar = () => {
                 <Link to="/favourite">
                   <TiHeartFullOutline />
                 </Link>
-                <Link to="/notifications">
+                <Link className="relative" to="/notifications">
+                  {unreadNotices && (
+                    <div className="absolute top-0 right-0 bg-red-600 w-4 h-4 rounded-full -translate-y-1/2 translate-x-1/2" />
+                  )}
                   <FaBell />
                 </Link>
                 <div className="max-lg:hidden">
@@ -102,8 +102,8 @@ const NavBar = () => {
                 <button
                   onClick={() => {
                     setSearchParams({
-                      'auth':'true',
-                      'signup':'false'
+                      auth: "true",
+                      signup: "false",
                     });
                   }}
                   className="px-3 py-1 bg-white rounded-full text-blue-950 border-white border-2 hover:bg-transparent hover:text-white max-sm:text-[.5rem] font-bold"
@@ -114,8 +114,8 @@ const NavBar = () => {
                 <button
                   onClick={() => {
                     setSearchParams({
-                      'auth':'true',
-                      'signup':'true'
+                      auth: "true",
+                      signup: "true",
                     });
                   }}
                   className="px-3 py-1 border-2 border-white rounded-full hover:bg-white hover:text-blue-950 max-sm:text-[.5rem] font-bold"

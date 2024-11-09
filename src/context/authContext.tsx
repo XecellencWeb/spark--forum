@@ -25,11 +25,13 @@ import toast from "react-hot-toast";
 const UserContext = createContext({});
 
 export type NoticeType = {
+  ref?: any;
   seen?: string[];
   delivered?: string[];
   message: string;
   type: "USER" | "POST";
   noticeFor?: string[];
+  createdAt?: string;
   read?: boolean;
 };
 
@@ -110,11 +112,13 @@ export type UserContextType = {
   dislikeComment: (postref: any, commentId: number) => void;
   markPostFavourite: (postId: number) => void;
   posts: PostType[];
+  latestPPost: PostType[];
   followers?: UserType[];
   pendingFollowers?: UserType[];
   following?: UserType[];
   notices: any[];
   unreadNotices: boolean;
+  readNotice: (ref: any) => Promise<boolean>;
 };
 
 //like query
@@ -172,6 +176,7 @@ const dislike = (post: any) => {
 const AuthContext = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<UserType>();
   const [posts, setPosts] = useState<PostType[]>([]);
+  const [latestPPost, setlatestPosts] = useState<PostType[]>([]);
   const [followers, setFollowers] = useState<UserType[]>();
   const [following, setFollowing] = useState<UserType[]>();
   const [pendingFollowers, setPendingFollowers] = useState<UserType[]>();
@@ -264,6 +269,47 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.log(error);
     }
+  };
+
+  //get trending post
+  const latestPost = async () => {
+    const allPosts = (await getDocs(collection(db, "posts"))).docs;
+    const updatedAllPosts = await Promise.all(
+      allPosts.map(async (a): Promise<PostType> => {
+        //check if current user liked post is following createdby user and marks post as favourite
+
+        const user = await getUser((a.data() as PostType).createdBy);
+        return {
+          ref: a.ref,
+          ...a.data(),
+          comments: (a.data() as PostType).comments?.map((a) => {
+            return {
+              ...a,
+              liked: a.likedBy?.includes(auth.currentUser?.email!),
+              unliked: a.dislikedBy?.includes(auth.currentUser?.email!),
+            };
+          }),
+          following: !!user.followers?.find(
+            (a) => a.email == auth.currentUser?.email
+          ),
+          liked: (a.data() as PostType).likedBy?.includes(
+            auth.currentUser?.email as string
+          ),
+          unliked: (a.data() as PostType).dislikedBy?.includes(
+            auth.currentUser?.email as string
+          ),
+          markedFavourite: currentUser?.favouritePosts?.includes(
+            (a.data() as PostType).id as number
+          ),
+        } as PostType;
+      })
+    );
+
+    setlatestPosts(
+      updatedAllPosts
+        .sort((a, b) => (b.createdAt as any) - (a.createdAt as any))
+        .slice(0, 10)
+    );
   };
 
   //comment to post
@@ -543,6 +589,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
         delivered: [auth.currentUser?.email],
         type,
         message,
+        createdAt: Date.now(),
         noticeFor: noticeFor || user[0].data().followers || [],
       });
     } catch (error) {
@@ -558,7 +605,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
       const ss = await getDocs(collection(db, "notifications"));
 
       ss.forEach(async (s) => {
-        const notice: NoticeType = s.data() as NoticeType;
+        const notice: NoticeType = { ref: s.ref, ...s.data() } as NoticeType;
 
         if (!notice?.noticeFor?.includes(auth.currentUser?.email as string)) {
           return;
@@ -609,7 +656,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
           where("noticeFor", "array-contains", auth.currentUser)
         )
       )
-    ).docs.map((a) => a.data()) as NoticeType[];
+    ).docs.map((a) => ({ ref: a.ref, ...a.data() })) as NoticeType[];
 
     setUnreadNotices(
       !!involvedNotices.find((a) =>
@@ -618,8 +665,23 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  //user funcs
+  //read notice
+  const readNotice = async (ref: any): Promise<boolean> => {
+    try {
+      const notice: NoticeType = (await getDoc(ref)).data() as NoticeType;
 
+      await updateDoc(ref, {
+        seen: [...(notice?.seen || []), auth.currentUser?.email],
+      });
+
+      return true;
+    } catch (error: any) {
+      console.log(error);
+      throw Error(error);
+    }
+  };
+
+  //user funcs
   //create user
   const signUpUser = async (user: UserType) => {
     try {
@@ -876,6 +938,9 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
           followers: acceptRequest,
         });
       });
+
+      await getAllUsers();
+      await getPendingFollowRequest();
     } catch (error) {
       console.log(error);
     }
@@ -901,6 +966,9 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
           followers: newFollowers,
         });
       });
+
+      await getAllUsers();
+      await getPendingFollowRequest();
     } catch (error) {
       console.log(error);
     }
@@ -946,11 +1014,9 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   //get one user
   const getUser = async (email: string): Promise<UserType> => {
     try {
-      return (
-        await getDocs(
-          query(collection(db, "users"), where("email", "==", email))
-        )
-      ).docs[0].data() as UserType;
+      return (await getDocs(collection(db, "users"))).docs
+        .find((a) => a.data().email.includes(email))
+        ?.data() as UserType;
     } catch (error: any) {
       console.log(error);
       throw Error(error.message);
@@ -962,6 +1028,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     if (effectOnce.current) {
       getAllUsers();
       getAllPosts();
+      latestPost();
       getNotice();
       updateCurrentUser(auth.currentUser?.email as string);
     }
@@ -996,7 +1063,9 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
     following,
     notices,
     posts,
+    latestPPost,
     unreadNotices,
+    readNotice,
   };
 
   return (

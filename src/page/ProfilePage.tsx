@@ -33,7 +33,7 @@ const ProfilePage = () => {
         <button className="bg-blue-500 hover:bg-blue-300 font-bold px-3 py-2 rounded-full text-white">
           Change Picture
         </button>
-        <button className="text-red-600 py-2 font-bold">Delete Picture</button>
+        
       </div>
 
       {editing ? (
