@@ -1,6 +1,5 @@
 import {
-  HtmlHTMLAttributes,
-  HTMLInputTypeAttribute,
+  
   InputHTMLAttributes,
   useEffect,
   useState,
