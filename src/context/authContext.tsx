@@ -185,8 +185,6 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
   const [unreadNotices, setUnreadNotices] = useState(false);
   const noticeRef = useRef<any>();
 
-  const effectOnce = useRef(false);
-
   console.log(posts);
 
   //post funcs
@@ -1025,16 +1023,11 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
 
   //call use effect once
   useEffect(() => {
-    if (effectOnce.current) {
-      getAllUsers();
-      getAllPosts();
-      latestPost();
-      getNotice();
-      updateCurrentUser(auth.currentUser?.email as string);
-    }
-    return () => {
-      effectOnce.current = true;
-    };
+    getAllUsers();
+    getAllPosts();
+    latestPost();
+    getNotice();
+    updateCurrentUser(auth.currentUser?.email as string);
   }, []);
 
   const contextProps: UserContextType = {

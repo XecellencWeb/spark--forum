@@ -50,7 +50,7 @@ const AddPage = () => {
         />
       </label>
       <button className="w-full rounded-full bg-blue-600 mt-8 hover:bg-blue-800 py-2 text-white text-center">
-        {creating ? "Creating Post..." : "Creat Post"}
+        {creating ? "Creating Post..." : "Create Post"}
       </button>
     </form>
   );
