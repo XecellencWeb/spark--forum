@@ -247,7 +247,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
                 unliked: a.dislikedBy?.includes(auth.currentUser?.email!),
               };
             }),
-            following: !!user.followers?.find(
+            following: !!user?.followers?.find(
               (a) => a.email == auth.currentUser?.email
             ),
             liked: (a.data() as PostType).likedBy?.includes(
@@ -287,7 +287,7 @@ const AuthContext = ({ children }: { children: ReactNode }) => {
               unliked: a.dislikedBy?.includes(auth.currentUser?.email!),
             };
           }),
-          following: !!user.followers?.find(
+          following: !!user?.followers?.find(
             (a) => a.email == auth.currentUser?.email
           ),
           liked: (a.data() as PostType).likedBy?.includes(
